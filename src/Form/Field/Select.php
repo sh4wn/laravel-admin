@@ -226,7 +226,8 @@ EOT;
      */
     public function model($model, $idField = 'id', $textField = 'name')
     {
-        if (!class_exists($model)
+        if (
+            !class_exists($model)
             || !in_array(Model::class, class_parents($model))
         ) {
             throw new \InvalidArgumentException("[$model] must be a valid model class");
@@ -267,7 +268,7 @@ EOT;
     protected function loadRemoteOptions($url, $parameters = [], $options = [])
     {
         $ajaxOptions = [
-            'url' => $url.'?'.http_build_query($parameters),
+            'url' => $url . '?' . http_build_query($parameters),
         ];
         $configs = array_merge([
             'allowClear'         => true,
@@ -425,7 +426,15 @@ EOT;
         $configs = json_encode($configs);
 
         if (empty($this->script)) {
-            $this->script = "$(\"{$this->getElementClassSelector()}\").select2($configs);";
+            $this->script = <<<JS
+                $("{$this->getElementClassSelector()}").select2({...$configs,templateResult:function(state){
+                    if (state.text.indexOf("http")==0) {
+                        return "<img src='"+state.text+"' />";
+                    }else{
+                        return state.text;
+                    }
+                }});
+            JS;
         }
 
         if ($this->options instanceof \Closure) {

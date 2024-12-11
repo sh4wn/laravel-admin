@@ -1,14 +1,19 @@
 {
-    "name": "encore/laravel-admin",
-    "description": "laravel admin",
+    "name": "xiangyang.li/laravel-admin",
+    "description": "a laravel admin fork",
     "type": "library",
-    "keywords": ["laravel", "admin", "grid", "form"],
-    "homepage": "https://github.com/z-song/laravel-admin",
+    "keywords": [
+        "laravel",
+        "admin",
+        "grid",
+        "form"
+    ],
+    "homepage": "https://github.com/sh4wn/laravel-admin",
     "license": "MIT",
     "authors": [
         {
-            "name": "zsong",
-            "email": "zosong@126.com"
+            "name": "shawn",
+            "email": "shawn@xiangyang.li"
         }
     ],
     "require": {
