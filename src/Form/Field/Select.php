@@ -429,7 +429,7 @@ EOT;
             $this->script = <<<JS
                 $("{$this->getElementClassSelector()}").select2({...$configs,templateResult:function(state){
                     if (state.text.indexOf("http")==0) {
-                        return "<img src='"+state.text+"' />";
+                        return $("<img src='"+state.text+"' />");
                     }else{
                         return state.text;
                     }
