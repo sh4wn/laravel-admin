@@ -16,6 +16,9 @@
             "email": "shawn@xiangyang.li"
         }
     ],
+    "replace": {
+        "encore/laravel-admin": "1.8.19"
+    },
     "require": {
         "php": ">=7.0.0",
         "symfony/dom-crawler": "~3.1|~4.0|~5.0",
