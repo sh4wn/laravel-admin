@@ -129,28 +129,35 @@ class Select extends Field
 
         $strAllowClear = var_export($allowClear, true);
 
-        $script = <<<EOT
-$(document).off('change', "{$this->getElementClassSelector()}");
-$(document).on('change', "{$this->getElementClassSelector()}", function () {
-    var target = $(this).closest('.fields-group').find(".$class");
-    $.get("$sourceUrl",{q : this.value}, function (data) {
-        target.find("option").remove();
-        $(target).select2({
-            placeholder: $placeholder,
-            allowClear: $strAllowClear,
-            data: $.map(data, function (d) {
-                d.id = d.$idField;
-                d.text = d.$textField;
-                return d;
-            })
-        });
-        if (target.data('value')) {
-            $(target).val(target.data('value'));
-        }
-        $(target).trigger('change');
-    });
-});
-EOT;
+        $script = <<<JS
+            $(document).off('change', "{$this->getElementClassSelector()}");
+            $(document).on('change', "{$this->getElementClassSelector()}", function () {
+                var target = $(this).closest('.fields-group').find(".$class");
+                $.get("$sourceUrl",{q : this.value}, function (data) {
+                    target.find("option").remove();
+                    $(target).select2({
+                        placeholder: $placeholder,
+                        allowClear: $strAllowClear,
+                        templateResult:function(state){
+                            if (state.text.indexOf("http")==0) {
+                                return  $("<img height='100px' src='"+state.text+"' />");
+                            }else{
+                                return state.text;
+                            }
+                        },
+                        data: $.map(data, function (d) {
+                            d.id = d.$idField;
+                            d.text = d.$textField;
+                            return d;
+                        })
+                    });
+                    if (target.data('value')) {
+                        $(target).val(target.data('value'));
+                    }
+                    $(target).trigger('change');
+                });
+            });
+        JS;
 
         Admin::script($script);
 
@@ -179,36 +186,43 @@ EOT;
 
         $strAllowClear = var_export($allowClear, true);
 
-        $script = <<<EOT
-var fields = '$fieldsStr'.split('.');
-var urls = '$urlsStr'.split('^');
+        $script = <<<JS
+            var fields = '$fieldsStr'.split('.');
+            var urls = '$urlsStr'.split('^');
 
-var refreshOptions = function(url, target) {
-    $.get(url).then(function(data) {
-        target.find("option").remove();
-        $(target).select2({
-            placeholder: $placeholder,
-            allowClear: $strAllowClear,
-            data: $.map(data, function (d) {
-                d.id = d.$idField;
-                d.text = d.$textField;
-                return d;
-            })
-        }).trigger('change');
-    });
-};
+            var refreshOptions = function(url, target) {
+                $.get(url).then(function(data) {
+                    target.find("option").remove();
+                    $(target).select2({
+                        placeholder: $placeholder,
+                        allowClear: $strAllowClear,
+                        templateResult:function(state){
+                            if (state.text.indexOf("http")==0) {
+                                return  $("<img height='100px' src='"+state.text+"' />");
+                            }else{
+                                return state.text;
+                            }
+                        },
+                        data: $.map(data, function (d) {
+                            d.id = d.$idField;
+                            d.text = d.$textField;
+                            return d;
+                        })
+                    }).trigger('change');
+                });
+            };
 
-$(document).off('change', "{$this->getElementClassSelector()}");
-$(document).on('change', "{$this->getElementClassSelector()}", function () {
-    var _this = this;
-    var promises = [];
+            $(document).off('change', "{$this->getElementClassSelector()}");
+            $(document).on('change', "{$this->getElementClassSelector()}", function () {
+                var _this = this;
+                var promises = [];
 
-    fields.forEach(function(field, index){
-        var target = $(_this).closest('.fields-group').find('.' + fields[index]);
-        promises.push(refreshOptions(urls[index] + "?q="+ _this.value, target));
-    });
-});
-EOT;
+                fields.forEach(function(field, index){
+                    var target = $(_this).closest('.fields-group').find('.' + fields[index]);
+                    promises.push(refreshOptions(urls[index] + "?q="+ _this.value, target));
+                });
+            });
+        JS;
 
         Admin::script($script);
 
@@ -283,24 +297,28 @@ EOT;
 
         $ajaxOptions = json_encode(array_merge($ajaxOptions, $options));
 
-        $this->script = <<<EOT
-
-$.ajax($ajaxOptions).done(function(data) {
-
-  $("{$this->getElementClassSelector()}").each(function(index, element) {
-      $(element).select2({
-        data: data,
-        $configs
-      });
-      var value = $(element).data('value') + '';
-      if (value) {
-        value = value.split(',');
-        $(element).val(value).trigger("change");
-      }
-  });
-});
-
-EOT;
+        $this->script = <<<JS
+            $.ajax($ajaxOptions).done(function(data) {
+                $("{$this->getElementClassSelector()}").each(function(index, element) {
+                    $(element).select2({
+                        data: data,
+                        templateResult:function(state){
+                            if (state.text.indexOf("http")==0) {
+                                return  $("<img height='100px' src='"+state.text+"' />");
+                            }else{
+                                return state.text;
+                            }
+                        },
+                        $configs
+                    });
+                    var value = $(element).data('value') + '';
+                    if (value) {
+                        value = value.split(',');
+                        $(element).val(value).trigger("change");
+                    }
+                });
+            });
+        JS;
 
         return $this;
     }
@@ -325,42 +343,47 @@ EOT;
         $configs = json_encode($configs);
         $configs = substr($configs, 1, strlen($configs) - 2);
 
-        $this->script = <<<EOT
+        $this->script = <<<JS
+            $("{$this->getElementClassSelector()}").select2({
+                ajax: {
+                    url: "$url",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                    return {
+                        q: params.term,
+                        page: params.page
+                    };
+                    },
+                    processResults: function (data, params) {
+                    params.page = params.page || 1;
 
-$("{$this->getElementClassSelector()}").select2({
-  ajax: {
-    url: "$url",
-    dataType: 'json',
-    delay: 250,
-    data: function (params) {
-      return {
-        q: params.term,
-        page: params.page
-      };
-    },
-    processResults: function (data, params) {
-      params.page = params.page || 1;
-
-      return {
-        results: $.map(data.data, function (d) {
-                   d.id = d.$idField;
-                   d.text = d.$textField;
-                   return d;
-                }),
-        pagination: {
-          more: data.next_page_url
-        }
-      };
-    },
-    cache: true
-  },
-  $configs,
-  escapeMarkup: function (markup) {
-      return markup;
-  }
-});
-
-EOT;
+                    return {
+                        results: $.map(data.data, function (d) {
+                                d.id = d.$idField;
+                                d.text = d.$textField;
+                                return d;
+                                }),
+                        pagination: {
+                        more: data.next_page_url
+                        }
+                    };
+                    },
+                    cache: true
+                },
+                templateResult:function(state){
+                        if (state.text.indexOf("http")==0) {
+                            return  $("<img height='100px' src='"+state.text+"' />");
+                        }else{
+                            return state.text;
+                        }
+                },
+                $configs,
+                escapeMarkup: function (markup) {
+                    return markup;
+                }
+            });
+        JS;
 
         return $this;
     }
@@ -427,13 +450,16 @@ EOT;
 
         if (empty($this->script)) {
             $this->script = <<<JS
-                $("{$this->getElementClassSelector()}").select2({...$configs,templateResult:function(state){
-                    if (state.text.indexOf("http")==0) {
-                        return  $("<img height='100px' src='"+state.text+"' />");
-                    }else{
-                        return state.text;
+                $("{$this->getElementClassSelector()}").select2({
+                    ...$configs,
+                    templateResult:function(state){
+                        if (state.text.indexOf("http")==0) {
+                            return  $("<img height='100px' src='"+state.text+"' />");
+                        }else{
+                            return state.text;
+                        }
                     }
-                }});
+                });
             JS;
         }
 

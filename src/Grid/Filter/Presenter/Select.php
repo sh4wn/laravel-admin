@@ -85,21 +85,21 @@ class Select extends Presenter
             $configs = json_encode($configs);
             $configs = substr($configs, 1, strlen($configs) - 2);
 
-            $this->script = <<<SCRIPT
+            $this->script = <<<JS
                 (function ($){
                     $(".{$this->getElementClass()}").select2({
-                    placeholder: $placeholder,
-                    templateResult:function(state){
-                        if (state.text.indexOf("http")==0) {
-                            return  $("<img height='100px' src='"+state.text+"' />");
-                        }else{
-                            return state.text;
-                        }
-                    },
-                    ...$configs
+                        placeholder: $placeholder,
+                        templateResult:function(state){
+                            if (state.text.indexOf("http")==0) {
+                                return  $("<img height='100px' src='"+state.text+"' />");
+                            }else{
+                                return state.text;
+                            }
+                        },
+                        $configs
                     });
                 })(jQuery);
-                SCRIPT;
+            JS;
         }
 
         Admin::script($this->script);
@@ -180,17 +180,21 @@ class Select extends Presenter
         $values = array_filter($values);
         $values = json_encode($values);
 
-        $this->script = <<<EOT
-
-$.ajax($ajaxOptions).done(function(data) {
-  $(".{$this->getElementClass()}").select2({
-    data: data,
-    $configs
-  }).val($values).trigger("change");
-  
-});
-
-EOT;
+        $this->script = <<<JS
+            $.ajax($ajaxOptions).done(function(data) {
+                $(".{$this->getElementClass()}").select2({
+                    data: data,
+                    templateResult:function(state){
+                        if (state.text.indexOf("http")==0) {
+                            return  $("<img height='100px' src='"+state.text+"' />");
+                        }else{
+                            return state.text;
+                        }
+                    },
+                    $configs
+                }).val($values).trigger("change");
+            });
+        JS;
     }
 
     /**
@@ -211,42 +215,47 @@ EOT;
         $configs = json_encode($configs);
         $configs = substr($configs, 1, strlen($configs) - 2);
 
-        $this->script = <<<EOT
+        $this->script = <<<JS
+            $(".{$this->getElementClass()}").select2({
+                ajax: {
+                    url: "$resourceUrl",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                    return {
+                        q: params.term,
+                        page: params.page
+                    };
+                    },
+                    processResults: function (data, params) {
+                    params.page = params.page || 1;
 
-$(".{$this->getElementClass()}").select2({
-  ajax: {
-    url: "$resourceUrl",
-    dataType: 'json',
-    delay: 250,
-    data: function (params) {
-      return {
-        q: params.term,
-        page: params.page
-      };
-    },
-    processResults: function (data, params) {
-      params.page = params.page || 1;
-
-      return {
-        results: $.map(data.data, function (d) {
-                   d.id = d.$idField;
-                   d.text = d.$textField;
-                   return d;
-                }),
-        pagination: {
-          more: data.next_page_url
-        }
-      };
-    },
-    cache: true
-  },
-  $configs,
-  escapeMarkup: function (markup) {
-      return markup;
-  }
-});
-
-EOT;
+                    return {
+                        results: $.map(data.data, function (d) {
+                                d.id = d.$idField;
+                                d.text = d.$textField;
+                                return d;
+                                }),
+                        pagination: {
+                        more: data.next_page_url
+                        }
+                    };
+                    },
+                    cache: true
+                },
+                templateResult:function(state){
+                        if (state.text.indexOf("http")==0) {
+                            return  $("<img height='100px' src='"+state.text+"' />");
+                        }else{
+                            return state.text;
+                        }
+                },
+                $configs,
+                escapeMarkup: function (markup) {
+                    return markup;
+                }
+            });
+        JS;
     }
 
     /**
