@@ -86,14 +86,20 @@ class Select extends Presenter
             $configs = substr($configs, 1, strlen($configs) - 2);
 
             $this->script = <<<SCRIPT
-(function ($){
-    $(".{$this->getElementClass()}").select2({
-      placeholder: $placeholder,
-      $configs
-    });
-})(jQuery);
-
-SCRIPT;
+                (function ($){
+                    $(".{$this->getElementClass()}").select2({
+                    placeholder: $placeholder,
+                    templateResult:function(state){
+                        if (state.text.indexOf("http")==0) {
+                            return  $("<img height='100px' src='"+state.text+"' />");
+                        }else{
+                            return state.text;
+                        }
+                    },
+                    ...$configs
+                    });
+                })(jQuery);
+                SCRIPT;
         }
 
         Admin::script($this->script);
@@ -112,7 +118,8 @@ SCRIPT;
      */
     public function model($model, $idField = 'id', $textField = 'name')
     {
-        if (!class_exists($model)
+        if (
+            !class_exists($model)
             || !in_array(Model::class, class_parents($model))
         ) {
             throw new \InvalidArgumentException("[$model] must be a valid model class");
