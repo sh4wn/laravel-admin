@@ -178,7 +178,15 @@ class AuthController extends Controller
             return $this->redirectTo();
         }
 
-        return property_exists($this, 'redirectTo') ? $this->redirectTo : config('admin.route.prefix');
+        if (property_exists($this, 'redirectTo')) {
+            return $this->redirectTo;
+        }
+
+        if (\request()->has('redirectTo')) {
+            return \request('redirectTo');
+        }
+
+        return  config('admin.route.prefix');
     }
 
     /**
